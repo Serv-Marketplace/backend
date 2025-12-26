@@ -17,9 +17,9 @@ app.use((err, req, res, next) => {
 });
 
 
-// app.get('/', (_req, res) => {
-//   res.send('Hello Express!')
-// })
+app.get('/', (_req, res) => {
+  res.send('Hello Express!')
+})
 
 // app.get('/api/users/:id', (_req, res) => {
 //   res.json({ id: _req.params.id })
