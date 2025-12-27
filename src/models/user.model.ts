@@ -2,30 +2,38 @@
 import { connectDB } from "../config/db.js";
 import { ObjectId } from "mongodb";
 
-const COLLECTION = "users";
-const db = await connectDB();
+export async function findByEmail(email) {
+    try {
+        const db = await connectDB();
+        return db.collection("users").findOne({ email });
+    } catch (error) {
+        throw new Error("Failed to fetch user by email: " + error.message);
+    }
+}
 
-export const UserModel = {
+export async function findById(id) {
+    try {
+        const db = await connectDB();
+        return db.collection("users").findOne({ _id: new ObjectId(id) });
+    } catch (error) {
+        throw new Error("Failed to fetch user by ID: " + error.message);
+    }
+}
 
-    collection() {
-        return db.database.collection(COLLECTION);
-    },
-
-    async findByEmail(email) {
-        return this.collection().findOne({ email });
-    },
-
-    async findById(id) {
-        return this.collection().findOne({ _id: new ObjectId(id) });
-    },
-
-    async create(user) {
-        const result = await this.collection().insertOne(user);
+export async function create(user) {
+    try {
+        const db = await connectDB();
+        const result = await db.collection("users").insertOne(user);
         return result.insertedId;
-    },
+    } catch (error) {
+        throw new Error("Failed to create user: " + error.message);
+    }
+}
 
-    async enable2FA(userId, secret) {
-        return this.collection().updateOne(
+export async function enable2FAModel(userId, secret) {
+    try {
+        const db = await connectDB();
+        return db.collection("users").updateOne(
             { _id: new ObjectId(userId) },
             {
                 $set: {
@@ -34,5 +42,8 @@ export const UserModel = {
                 },
             }
         );
-    },
-};
+    } catch (error) {
+        throw new Error("Failed to enable 2FA: " + error.message);
+    }
+}
+

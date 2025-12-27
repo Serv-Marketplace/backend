@@ -3,23 +3,22 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import speakeasy from "speakeasy";
 import QRCode from "qrcode";
-import { UserModel } from "../models/user.model.js";
+import { findByEmail, create, findById, enable2FAModel } from "../models/user.model.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
-export const AuthController = {
-    // ================= REGISTER =================
-    async register(req, res) {
+export async function register(req, res) {
+    try {
         const { email, password } = req.body;
 
-        const existing = await UserModel.findByEmail(email);
+        const existing = await findByEmail(email);
         if (existing) {
             return res.status(400).json({ message: "Email already registered" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const userId = await UserModel.create({
+        const userId = await create({
             email,
             password: hashedPassword,
             twoFactorEnabled: false,
@@ -30,13 +29,17 @@ export const AuthController = {
             message: "User registered",
             userId,
         });
-    },
+    } catch (error) {
+        console.error("Register Error:", error);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
 
-    // ================= LOGIN STEP 1 =================
-    async login(req, res) {
+export async function login(req, res) {
+    try {
         const { email, password } = req.body;
 
-        const user = await UserModel.findByEmail(email);
+        const user = await findByEmail(email);
         if (!user) {
             return res.status(401).json({ message: "Invalid credentials" });
         }
@@ -63,13 +66,16 @@ export const AuthController = {
         );
 
         return res.json({ token });
-    },
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
 
-    // ================= LOGIN STEP 2 (OTP) =================
-    async verify2FA(req, res) {
+export async function verify2FA(req, res) {
+    try {
         const { userId, token } = req.body;
 
-        const user = await UserModel.findById(userId);
+        const user = await findById(userId);
         if (!user || !user.twoFactorSecret) {
             return res.status(400).json({ message: "2FA not configured" });
         }
@@ -92,10 +98,13 @@ export const AuthController = {
         );
 
         return res.json({ token: jwtToken });
-    },
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
 
-    // ================= SETUP 2FA =================
-    async setup2FA(req, res) {
+export async function setup2FA(req, res) {
+    try {
         const { userId } = req.body;
 
         const secret = speakeasy.generateSecret({
@@ -109,10 +118,13 @@ export const AuthController = {
             base32: secret.base32,
             qrCode,
         });
-    },
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
 
-    // ================= ENABLE 2FA =================
-    async enable2FA(req, res) {
+export async function enable2FA(req, res) {
+    try {
         const { userId, base32, token } = req.body;
 
         const verified = speakeasy.totp.verify({
@@ -126,8 +138,11 @@ export const AuthController = {
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
-        await UserModel.enable2FA(userId, base32);
+        await enable2FAModel(userId, base32);
 
         return res.json({ message: "2FA enabled successfully" });
-    },
-};
+
+    } catch (error) {
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}

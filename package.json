@@ -2,9 +2,13 @@
   "name": "express",
   "type": "module",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "express": "5.1.0",
-    "mongodb": "^7.0.0"
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.0.0",
+    "qrcode": "^1.5.4",
+    "speakeasy": "^2.0.0"
   },
   "devDependencies": {
     "@types/express": "5.0.0",
